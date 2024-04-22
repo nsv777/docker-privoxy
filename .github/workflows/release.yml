@@ -1,0 +1,31 @@
+name: Create github release
+
+on:
+  push:
+    tags:
+      - "*"
+
+jobs:
+  create-release:
+    name: Create Release
+    runs-on: ubuntu-latest
+    steps:
+      - name: Set env
+        run: echo ::set-env name=RELEASE_VERSION::${GITHUB_REF#refs/*/}
+      - name: Checkout code
+        uses: actions/checkout@v4
+      - name: Install auto-changelog
+        run: sudo npm install -g auto-changelog
+      - name: Create release notes
+        run: auto-changelog --ignore-commit-pattern "\[ci|docu|meta\]|fixup" --starting-version $RELEASE_VERSION --hide-credit -o RELEASENOTES.md
+      - name: Create Release
+        id: create_release
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} # This token is provided by Actions, you do not need to create your own token
+        with:
+          tag_name: ${{ github.ref }}
+          release_name: Release ${{ github.ref }}
+          body_path: ./RELEASENOTES.md
+          draft: false
+          prerelase: false
