@@ -2,8 +2,9 @@ name: Create github release
 
 on:
   push:
-    tags:
-      - "*"
+    branches:
+      - "main"
+      - "master"
 
 jobs:
   create-release:
@@ -12,6 +13,9 @@ jobs:
     steps:
       - name: Set env
         run: echo ::set-env name=RELEASE_VERSION::${GITHUB_REF#refs/*/}
+      - name: Get current datetime
+        id: datetime
+        run: echo "::set-output name=datetime::$(date +'%Y%m%d%H%M')"
       - name: Checkout code
         uses: actions/checkout@v4
       - name: Install auto-changelog
@@ -20,12 +24,12 @@ jobs:
         run: auto-changelog --ignore-commit-pattern "\[ci|docu|meta\]|fixup" --starting-version $RELEASE_VERSION --hide-credit -o RELEASENOTES.md
       - name: Create Release
         id: create_release
-        uses: actions/create-release@v1
+        uses: actions/create-release@latest
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} # This token is provided by Actions, you do not need to create your own token
         with:
-          tag_name: ${{ github.ref }}
-          release_name: Release ${{ github.ref }}
+          tag_name: ${{ steps.datetime.outputs.datetime }}
+          release_name: Release ${{ steps.datetime.outputs.datetime }}
           body_path: ./RELEASENOTES.md
           draft: false
-          prerelase: false
+          prerelease: false
